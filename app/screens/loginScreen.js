@@ -33,7 +33,7 @@ export default function LoginScreen() {
 
       if (response?.token) {
         // Guardar el token en almacenamiento seguro
-        await SecureStore.setItemAsync('authToken', response.token);
+        await SecureStore.setItemAsync('token', response.token);
 
         // Navegar a la pantalla principal
         navigation.navigate('Home');

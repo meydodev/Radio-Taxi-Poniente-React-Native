@@ -1,10 +1,109 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity,ImageBackground } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, FlatList, Alert } from 'react-native';
 import { Audio } from 'expo-av';
+import axios from 'axios';
+import io from 'socket.io-client';
+import { API_URL } from '../constants/config';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Channel1Screen() {
-  const [recording, setRecording] = React.useState();
-  const [recordings, setRecordings] = React.useState([]);
+  const [recording, setRecording] = useState();
+  const [isPlaying, setIsPlaying] = useState(false); // Control de reproducción
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const socket = io(API_URL);
+
+  useEffect(() => {
+    const fetchConnectedUsers = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/channel1/getUsers`);
+        const users = response.data?.data || [];
+        setConnectedUsers(users);
+      } catch (error) {
+        console.error('Error al cargar usuarios conectados:', error);
+        Alert.alert('Error', 'No se pudo cargar la lista de usuarios conectados.');
+      }
+    };
+
+    fetchConnectedUsers();
+
+    // Escuchar eventos de Socket.IO
+    socket.on('new-user-channel1', (newUser) => {
+      setConnectedUsers((prevUsers) => [...prevUsers, newUser]);
+    });
+
+    socket.on('user-exit-channel1', (data) => {
+      setConnectedUsers((prevUsers) => prevUsers.filter((user) => user.id_user !== data.id_user));
+    });
+
+    socket.on('audio-uploaded-channel1', async (data) => {
+      setIsPlaying(true);
+      try {
+        const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl });
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isPlaying) {
+            setIsPlaying(false); // Habilitar el botón al terminar
+          }
+        });
+        await sound.playAsync();
+      } catch (error) {
+        console.error('Error al reproducir el audio:', error);
+        setIsPlaying(false);
+      }
+    });
+
+    // Eliminar usuario al desmontar
+    return () => {
+      socket.disconnect();
+      deleteUserFromChannel();
+    };
+  }, []);
+
+  const deleteUserFromChannel = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('token');
+      if (!token) {
+        console.error('Error: No se encontró el token. No se puede eliminar al usuario.');
+        return;
+      }
+
+      const response = await axios.delete(`${API_URL}/channel1/deleteUser/${token}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log('Usuario eliminado del canal:', response.data);
+    } catch (error) {
+      console.error('Error al eliminar usuario del canal:', error);
+    }
+  };
+
+  const uploadAudio = async (audioUri) => {
+    try {
+      const token = await SecureStore.getItemAsync('token');
+      if (!token) {
+        Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: audioUri,
+        type: 'audio/m4a',
+        name: 'audio.m4a',
+      });
+      formData.append('userId', 'USER_ID'); // Reemplazar con el ID real del usuario
+
+      const response = await axios.post(`${API_URL}/channel1/upload-audio`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Audio subido con éxito:', response.data);
+    } catch (error) {
+      console.error('Error al subir el audio:', error);
+      Alert.alert('Error', 'No se pudo subir el audio.');
+    }
+  };
 
   async function startRecording() {
     try {
@@ -25,63 +124,56 @@ export default function Channel1Screen() {
   }
 
   async function stopRecording() {
+    if (!recording) return;
+
     setRecording(undefined);
 
     try {
       await recording.stopAndUnloadAsync();
-      const { sound, status } = await recording.createNewLoadedSoundAsync();
+      const uri = recording.getURI();
+      console.log('Audio grabado en:', uri);
 
-      // Reproducir automáticamente
-      await sound.playAsync();
-
-      const newRecording = {
-        sound,
-        duration: getDurationFormatted(status.durationMillis),
-        file: recording.getURI(),
-      };
-      setRecordings([...recordings, newRecording]);
+      // Subir audio al servidor
+      uploadAudio(uri);
     } catch (err) {
       console.error('Error stopping recording', err);
     }
   }
 
-  function getDurationFormatted(milliseconds) {
-    const minutes = Math.floor(milliseconds / 1000 / 60);
-    const seconds = Math.round((milliseconds / 1000) % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  }
-
-  function getRecordingLines() {
-    return recordings.map((recordingLine, index) => (
-      <View key={index} style={styles.row}>
-        <Text style={styles.fill}>
-          Grabación #{index + 1} | {recordingLine.duration}
-        </Text>
-        <TouchableOpacity
-          onPress={() => recordingLine.sound.replayAsync()}
-          style={styles.playButton}
-        >
-          <Text style={styles.buttonText}>Reproducir</Text>
-        </TouchableOpacity>
-      </View>
-    ));
-  }
-
   return (
-    <ImageBackground source={require('../../assets/img/background-home.webp')} style={styles.container}
-    resizeMode='cover'>
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={recording ? styles.buttonRecording : styles.button}
-        onPressIn={startRecording}
-        onPressOut={stopRecording}
-      >
-        <Text style={styles.buttonText}>
-          {recording ? 'Grabando...' : 'Hablar'}
-        </Text>
-      </TouchableOpacity>
-      <View style={styles.recordingList}>{getRecordingLines()}</View>
-    </View>
+    <ImageBackground
+      source={require('../../assets/img/background-home.webp')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={recording || isPlaying ? styles.buttonDisabled : styles.button}
+          onPressIn={!isPlaying ? startRecording : null}
+          onPressOut={!isPlaying ? stopRecording : null}
+          disabled={isPlaying} // Deshabilitar el botón si hay audio en reproducción
+        >
+          <Text style={styles.buttonText}>
+            {recording ? 'Grabando...' : isPlaying ? 'Reproduciendo...' : 'Hablar'}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Usuarios Conectados:</Text>
+        <FlatList
+          data={connectedUsers}
+          keyExtractor={(item, index) => `${item.id_user}-${index}`}
+          renderItem={({ item, index }) => (
+            <View style={styles.userRow}>
+              <Text style={styles.userText}>
+                {index + 1}. {item.name} (Licencia: {item.license})
+              </Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No hay usuarios conectados.</Text>
+          }
+        />
+      </View>
     </ImageBackground>
   );
 }
@@ -92,30 +184,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-
   },
   button: {
     backgroundColor: '#007BFF',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 250,
+    height: 250,
+    borderRadius: 150,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
-    elevation: 5, // Sombras en Android
-    shadowColor: '#000', // Sombras en iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    marginVertical: 10,
+    elevation: 5,
   },
-  buttonRecording: {
-    backgroundColor: '#FF4136',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+  buttonDisabled: {
+    backgroundColor: '#A9A9A9',
+    width: 250,
+    height: 250,
+    borderRadius: 150,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
+    marginVertical: 10,
     elevation: 5,
   },
   buttonText: {
@@ -123,25 +210,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginVertical: 10,
-    width: '100%',
+    color: '#fff',
   },
-  fill: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  playButton: {
-    backgroundColor: '#28a745',
+  userRow: {
     padding: 10,
-    borderRadius: 5,
-  },
-  recordingList: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    backgroundColor: '#fff',
     width: '100%',
+  },
+  userText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center',
     marginTop: 20,
   },
 });

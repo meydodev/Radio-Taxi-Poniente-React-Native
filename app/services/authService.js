@@ -16,6 +16,6 @@ export const login = async (email, password) => {
     return response.data;
   } catch (error) {
     console.error("Error en la solicitud de login:", error.message);
-    throw new Error(error.response?.data?.message || "Error de autenticación");
+    throw new Error(error.response?.data?.message || "Error del servidor");
   }
 };
