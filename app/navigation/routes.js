@@ -30,7 +30,7 @@ const Routes = () => {
         <Stack.Screen
           name="Channel1"
           component={Channel1Screen}
-          options={{ headerShown: false }}
+          options={{title:'Volver'}}
         />
       </Stack.Navigator>
     </NavigationContainer>

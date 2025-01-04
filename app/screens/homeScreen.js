@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity,ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen  () {
@@ -7,6 +7,8 @@ export default function HomeScreen  () {
     const navigation = useNavigation();
 
     return (
+        <ImageBackground source={require('../../assets/img/background-home.webp')} style={styles.container} 
+        resizeMode='cover'>
         <View style={styles.container}>
             <TouchableOpacity
                 style={styles.button}
@@ -15,6 +17,7 @@ export default function HomeScreen  () {
                 <Text style={styles.buttonText}>Canal 1</Text>
             </TouchableOpacity>
         </View>
+        </ImageBackground>
     );
 };
 
@@ -23,7 +26,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#000',
     },
     button: {
         backgroundColor: '#1e90ff',
