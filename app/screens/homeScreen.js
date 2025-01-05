@@ -19,7 +19,7 @@ export default function HomeScreen() {
       const payload = { id_user: token, channelId: 1, muted: false };
 
       // Enviar solicitud al backend
-      const response = await axios.post('http://192.168.68.100:3000/home/addUserChannel1', payload);
+      const response = await axios.post('http://192.168.68.102:3000/home/addUserChannel1', payload);
 
       if (response.status === 201) {
         Alert.alert('Canal 1', 'Te has unido al canal 1 correctamente.');
