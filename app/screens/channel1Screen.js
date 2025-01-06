@@ -16,8 +16,15 @@ export default function Channel1Screen() {
     const fetchConnectedUsers = async () => {
       try {
         const response = await axios.get(`${API_URL}/channel1/getUsers`);
+        console.log('Usuarios obtenidos:', response.data);
         const users = response.data?.data || [];
-        setConnectedUsers(users);
+
+        // Filtrar duplicados basados en `id_user`
+        const uniqueUsers = Array.from(new Set(users.map((u) => u.id_user))).map((id) =>
+          users.find((u) => u.id_user === id)
+        );
+
+        setConnectedUsers(uniqueUsers);
       } catch (error) {
         console.error('Error al cargar usuarios conectados:', error);
         Alert.alert('Error', 'No se pudo cargar la lista de usuarios conectados.');
@@ -28,23 +35,61 @@ export default function Channel1Screen() {
 
     // Escuchar eventos de Socket.IO
     socket.on('new-user-channel1', (newUser) => {
-      setConnectedUsers((prevUsers) => [...prevUsers, newUser]);
+      console.log('Nuevo usuario:', newUser);
+      setConnectedUsers((prevUsers) => {
+        const userExists = prevUsers.some((user) => user.id_user === newUser.id_user);
+        if (userExists) {
+          return prevUsers; // Si ya existe, no lo agregamos
+        }
+        return [...prevUsers, newUser]; // Si no existe, lo agregamos
+      });
     });
 
     socket.on('user-exit-channel1', (data) => {
-      setConnectedUsers((prevUsers) => prevUsers.filter((user) => user.id_user !== data.id_user));
+      console.log('Usuario salió:', data);
+      setConnectedUsers((prevUsers) =>
+        prevUsers.filter((user) => user.id_user !== data.id_user)
+      );
     });
 
     socket.on('audio-uploaded-channel1', async (data) => {
+      console.log('Audio recibido:', data);
+
+      // Verificar si el audioUrl está disponible
+      if (!data.audioUrl) {
+        console.error('Error: audioUrl no está disponible.');
+        return;
+      }
+
       setIsPlaying(true);
       try {
+        // Configurar el modo de audio
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: true,
+          playsInSilentModeIOS: true,
+        });
+
+        // Crear y reproducir el audio
         const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl });
+
+        // Verificar si el sonido se creó correctamente
+        if (!sound) {
+          console.error('Error: No se pudo crear el objeto de sonido.');
+          setIsPlaying(false);
+          return;
+        }
+
         sound.setOnPlaybackStatusUpdate((status) => {
-          if (!status.isPlaying) {
-            setIsPlaying(false); // Habilitar el botón al terminar
+          if (status.didJustFinish) {
+            setIsPlaying(false); // Habilitar el botón después de terminar la reproducción
+            sound.unloadAsync(); // Liberar recursos
           }
         });
-        await sound.playAsync();
+
+        // Verificar si el sonido se reproduce correctamente
+        const playbackStatus = await sound.playAsync();
+        console.log('Estado de la reproducción:', playbackStatus);
       } catch (error) {
         console.error('Error al reproducir el audio:', error);
         setIsPlaying(false);
@@ -161,14 +206,17 @@ export default function Channel1Screen() {
         <Text style={styles.title}>Usuarios Conectados:</Text>
         <FlatList
           data={connectedUsers}
-          keyExtractor={(item, index) => `${item.id_user}-${index}`}
-          renderItem={({ item, index }) => (
-            <View style={styles.userRow}>
-              <Text style={styles.userText}>
-                {index + 1}. {item.name} (Licencia: {item.license})
-              </Text>
-            </View>
-          )}
+          keyExtractor={(item) => `${item.id_user}`}
+          renderItem={({ item, index }) => {
+            console.log('Renderizando usuario:', item);
+            return (
+              <View style={styles.userRow}>
+                <Text style={styles.userText}>
+                  {index + 1}. {item.name} (Licencia: {item.license})
+                </Text>
+              </View>
+            );
+          }}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No hay usuarios conectados.</Text>
           }

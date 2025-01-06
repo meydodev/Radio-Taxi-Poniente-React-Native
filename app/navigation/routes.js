@@ -25,7 +25,16 @@ const Routes = () => {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ headerShown: false }}
+          options={{title:'Radio Taxi Poniente',
+            headerStyle: {
+              backgroundColor: '#1e90ff',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+          }}
+          
         />
         <Stack.Screen
           name="Channel1"
