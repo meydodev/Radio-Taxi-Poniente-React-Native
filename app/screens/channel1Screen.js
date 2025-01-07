@@ -54,42 +54,31 @@ export default function Channel1Screen() {
 
     socket.on('audio-uploaded-channel1', async (data) => {
       console.log('Audio recibido:', data);
-
-      // Verificar si el audioUrl está disponible
-      if (!data.audioUrl) {
-        console.error('Error: audioUrl no está disponible.');
+    
+      // Evitar reproducir el audio del cliente que lo subió
+      const userId = await SecureStore.getItemAsync('token'); // Reemplaza con tu lógica para obtener el ID del usuario
+      if (data.userId === userId) {
+        console.log('Este audio pertenece al usuario actual. No se reproducirá.');
         return;
       }
-
+    
       setIsPlaying(true);
+      // Código para reproducir audio
       try {
-        // Configurar el modo de audio
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
           staysActiveInBackground: true,
           playsInSilentModeIOS: true,
         });
-
-        // Crear y reproducir el audio
+    
         const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl });
-
-        // Verificar si el sonido se creó correctamente
-        if (!sound) {
-          console.error('Error: No se pudo crear el objeto de sonido.');
-          setIsPlaying(false);
-          return;
-        }
-
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.didJustFinish) {
-            setIsPlaying(false); // Habilitar el botón después de terminar la reproducción
-            sound.unloadAsync(); // Liberar recursos
+            setIsPlaying(false);
+            sound.unloadAsync();
           }
         });
-
-        // Verificar si el sonido se reproduce correctamente
-        const playbackStatus = await sound.playAsync();
-        console.log('Estado de la reproducción:', playbackStatus);
+        await sound.playAsync();
       } catch (error) {
         console.error('Error al reproducir el audio:', error);
         setIsPlaying(false);
@@ -134,7 +123,7 @@ export default function Channel1Screen() {
         type: 'audio/m4a',
         name: 'audio.m4a',
       });
-      formData.append('userId', 'USER_ID'); // Reemplazar con el ID real del usuario
+      formData.append('id_user', token); 
 
       const response = await axios.post(`${API_URL}/channel1/upload-audio`, formData, {
         headers: {
@@ -143,7 +132,7 @@ export default function Channel1Screen() {
         },
       });
 
-      console.log('Audio subido con éxito:', response.data);
+      //console.log('Audio subido con éxito:', response.data);
     } catch (error) {
       console.error('Error al subir el audio:', error);
       Alert.alert('Error', 'No se pudo subir el audio.');

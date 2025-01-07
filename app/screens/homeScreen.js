@@ -23,7 +23,7 @@ export default function HomeScreen() {
       const response = await axios.post(`${API_URL}/home/addUserChannel1`, payload);
 
       if (response.status === 201) {
-        Alert.alert('Canal 1', 'Te has unido al canal 1 correctamente.');
+        //Alert.alert('Canal 1', 'Te has unido al canal 1 correctamente.');
         navigation.navigate('Channel1'); // Navega al canal si la solicitud es exitosa
       } else {
         Alert.alert('Error', 'No se pudo unir al canal. Inténtalo nuevamente.');
