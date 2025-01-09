@@ -7,7 +7,7 @@ export default function AppInfoScreen() {
     <View style={styles.container}>
        
       <Text style={styles.title}>Información de la App</Text>
-      <Text style={styles.text}>Esta es una app desarrollada por Radio Taxi Poniente sin fines lucrativos y de uso exclusivo para mienbros de la central 
+      <Text style={styles.text}>Esta es una app desarrollada por Radio Taxi Poniente sin fines lucrativos y de uso exclusivo usuarios de la central 
         Taxi Poniente.
       </Text>
       <Text style={styles.text}>Versión: 1.0.0</Text>

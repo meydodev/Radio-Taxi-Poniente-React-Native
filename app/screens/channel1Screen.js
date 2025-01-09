@@ -178,7 +178,7 @@ export default function Channel1Screen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/img/background-home.webp')}
+      source={require('../../assets/img/micro-channel.png')}
       style={styles.container}
       resizeMode="cover"
     >

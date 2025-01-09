@@ -8,7 +8,7 @@ import { API_URL } from '../constants/config';
 export default function HomeScreen() {
   const navigation = useNavigation();
 
-  
+
   async function handleChannelJoin() {
     try {
       // Recuperar el token del almacenamiento seguro
@@ -38,8 +38,8 @@ export default function HomeScreen() {
     try {
       // Eliminar el token del almacenamiento seguro
       await SecureStore.deleteItemAsync('token');
-     // Alert.alert('Sesión cerrada', 'Has cerrado sesión correctamente.');
-      
+      // Alert.alert('Sesión cerrada', 'Has cerrado sesión correctamente.');
+
       // Redirigir al usuario a la pantalla de login
       navigation.reset({
         index: 0,
@@ -53,14 +53,12 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/img/background-home.webp')}
-      style={styles.container}
-      resizeMode="cover"
+      source={require('../../assets/img/micro.webp')} style={styles.backgroundImage} resizeMode="cover"
     >
       <View style={styles.container}>
-        <Image 
-          source={require('../../assets/img/logo-radio-taxi-poniente.jpeg')} 
-          style={styles.logo} 
+        <Image
+          source={require('../../assets/img/logo-radio-taxi-poniente.jpeg')}
+          style={styles.logo}
         />
         <TouchableOpacity style={styles.button} onPress={handleChannelJoin}>
           <Text style={styles.buttonText}>Canal 1</Text>
@@ -100,12 +98,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     position: 'absolute',
-    top: '10%', 
+    top: '5%',
     alignSelf: 'center',
     width: 170,
     height: 170,
     borderRadius: 50,
     borderWidth: 2,
     borderColor: '#000',
-  }  
+  },
+  backgroundImage: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,}
+   // Ajuste de opacidad para que el logo sea más visible }
 });

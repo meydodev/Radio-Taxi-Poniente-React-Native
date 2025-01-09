@@ -67,6 +67,7 @@ export default function TabsNavigator() {
                         textAlign: 'center',
                     },
                     tabBarLabel: 'Perfil',
+                    tabBarHideOnKeyboard: true,
                 }}
             />
             <Tab.Screen
@@ -76,6 +77,7 @@ export default function TabsNavigator() {
                     headerTitle: 'Información de la App',
                     headerStyle: { backgroundColor: '#1e90ff' },
                     headerTintColor: '#fff',
+               
                 }}
             />
         </Tab.Navigator>
