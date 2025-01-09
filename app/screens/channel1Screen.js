@@ -6,6 +6,7 @@ import io from 'socket.io-client';
 import { API_URL } from '../constants/config';
 import * as SecureStore from 'expo-secure-store';
 
+
 export default function Channel1Screen() {
   const [recording, setRecording] = useState();
   const [isPlaying, setIsPlaying] = useState(false); // Control de reproducción
@@ -54,14 +55,14 @@ export default function Channel1Screen() {
 
     socket.on('audio-uploaded-channel1', async (data) => {
       console.log('Audio recibido:', data);
-    
+
       // Evitar reproducir el audio del cliente que lo subió
       const userId = await SecureStore.getItemAsync('token'); // Reemplaza con tu lógica para obtener el ID del usuario
       if (data.userId === userId) {
         console.log('Este audio pertenece al usuario actual. No se reproducirá.');
         return;
       }
-    
+
       setIsPlaying(true);
       // Código para reproducir audio
       try {
@@ -70,7 +71,7 @@ export default function Channel1Screen() {
           staysActiveInBackground: true,
           playsInSilentModeIOS: true,
         });
-    
+
         const { sound } = await Audio.Sound.createAsync({ uri: data.audioUrl });
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.didJustFinish) {
@@ -123,7 +124,7 @@ export default function Channel1Screen() {
         type: 'audio/m4a',
         name: 'audio.m4a',
       });
-      formData.append('id_user', token); 
+      formData.append('id_user', token);
 
       const response = await axios.post(`${API_URL}/channel1/upload-audio`, formData, {
         headers: {
@@ -154,6 +155,7 @@ export default function Channel1Screen() {
       }
     } catch (err) {
       console.error('Error starting recording', err);
+      Alert.alert('Error', 'Por favor deje el boton pulsado para hablar.');
     }
   }
 
@@ -200,10 +202,12 @@ export default function Channel1Screen() {
             console.log('Renderizando usuario:', item);
             return (
               <View style={styles.userRow}>
+                <View style={styles.greenDot}></View>
                 <Text style={styles.userText}>
-                  {index + 1}. {item.name} (Licencia: {item.license})
+                  {item.name}, Taxi: {item.license}
                 </Text>
               </View>
+
             );
           }}
           ListEmptyComponent={
@@ -269,5 +273,25 @@ const styles = StyleSheet.create({
     color: '#ccc',
     textAlign: 'center',
     marginTop: 20,
+  },
+  userRow: {
+    flexDirection: 'row', // Para alinear el punto verde y el texto horizontalmente
+    alignItems: 'center', // Centrar verticalmente
+    padding: 10,
+    width: '100%',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  greenDot: {
+    width: 10, // Tamaño del punto
+    height: 10,
+    borderRadius: 5, // Hace que el punto sea circular
+    backgroundColor: 'green', // Color del punto
+    marginRight: 10, // Espaciado entre el punto y el texto
+  },
+  userText: {
+    fontSize: 16,
+    color: '#000',
   },
 });

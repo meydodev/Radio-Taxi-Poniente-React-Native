@@ -8,6 +8,7 @@ import { API_URL } from '../constants/config';
 export default function HomeScreen() {
   const navigation = useNavigation();
 
+  
   async function handleChannelJoin() {
     try {
       // Recuperar el token del almacenamiento seguro
@@ -23,7 +24,6 @@ export default function HomeScreen() {
       const response = await axios.post(`${API_URL}/home/addUserChannel1`, payload);
 
       if (response.status === 201) {
-        //Alert.alert('Canal 1', 'Te has unido al canal 1 correctamente.');
         navigation.navigate('Channel1'); // Navega al canal si la solicitud es exitosa
       } else {
         Alert.alert('Error', 'No se pudo unir al canal. Inténtalo nuevamente.');
@@ -34,6 +34,23 @@ export default function HomeScreen() {
     }
   }
 
+  async function handleLogout() {
+    try {
+      // Eliminar el token del almacenamiento seguro
+      await SecureStore.deleteItemAsync('token');
+     // Alert.alert('Sesión cerrada', 'Has cerrado sesión correctamente.');
+      
+      // Redirigir al usuario a la pantalla de login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      Alert.alert('Error', 'Hubo un problema al cerrar sesión.');
+    }
+  }
+
   return (
     <ImageBackground
       source={require('../../assets/img/background-home.webp')}
@@ -41,18 +58,21 @@ export default function HomeScreen() {
       resizeMode="cover"
     >
       <View style={styles.container}>
-         <Image 
-                  source={require('../../assets/img/logo-radio-taxi-poniente.jpeg')} 
-                  style={styles.logo} 
-                />
+        <Image 
+          source={require('../../assets/img/logo-radio-taxi-poniente.jpeg')} 
+          style={styles.logo} 
+        />
         <TouchableOpacity style={styles.button} onPress={handleChannelJoin}>
           <Text style={styles.buttonText}>Canal 1</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.buttonExit} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Salir</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -65,6 +85,13 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 50,
+  },
+  buttonExit: {
+    backgroundColor: 'gray',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 50,
+    marginTop: 20,
   },
   buttonText: {
     color: '#fff',

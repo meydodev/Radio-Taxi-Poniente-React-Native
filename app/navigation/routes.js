@@ -1,10 +1,12 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import LoginScreen from '../screens/loginScreen';
-import RegisterScreen from '../screens/registerScreen';
-import HomeScreen from '../screens/homeScreen';
-import Channel1Screen from '../screens/channel1Screen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import HomeScreen from '../screens/HomeScreen';
+import Channel1Screen from '../screens/Channel1Screen';
+import TabsNavigator from './tabNavigation'
+import AppInfoScreen from '../screens/AppInfoScreen';
 
 const Stack = createStackNavigator();
 
@@ -25,23 +27,31 @@ const Routes = () => {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{title:'Radio Taxi Poniente',
-            headerStyle: {
-              backgroundColor: '#1e90ff',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-          
         />
         <Stack.Screen
           name="Channel1"
           component={Channel1Screen}
-          options={{title:'Volver'}}
+          options={{ title: 'Canal 1',
+            headerStyle: {
+              backgroundColor: '#1e90ff',
+            },
+            headerTintColor: '#fff',
+        
+           }}
+        />
+        <Stack.Screen
+          name="Tabs"
+          component={TabsNavigator}
+          options={{ headerShown: false }}
+        />
+
+      <Stack.Screen
+          name="AppInfo"
+          component={AppInfoScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
+      
     </NavigationContainer>
   );
 };

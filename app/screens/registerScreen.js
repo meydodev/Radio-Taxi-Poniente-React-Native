@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import SelectDropdown from 'react-native-select-dropdown';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  ImageBackground
+} from 'react-native';
+import ModalSelector from 'react-native-modal-selector';
 import { useNavigation } from '@react-navigation/native';
 import { validateEmail, validatePassword } from '../utils/inputValidation';
 import { registerService } from '../services/registerService';
 
-const licenses = Array.from({ length: 47 }, (_, i) => `Licencia ${i + 1}`);
+const licenses = Array.from({ length: 47 }, (_, i) => ({ key: i + 1, label: `Licencia ${i + 1}` }));
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -20,9 +29,8 @@ export default function RegisterScreen() {
   const navigation = useNavigation();
 
   const handleRegister = async () => {
-    setError(''); // Limpia el error previo
+    setError('');
 
-    // Validaciones
     const validateInputs = () => {
       if (!name) return 'Por favor, ingrese su nombre';
       if (!surnames) return 'Por favor, ingrese sus apellidos';
@@ -41,7 +49,6 @@ export default function RegisterScreen() {
     }
 
     try {
-      // Llamada al servicio de registro
       await registerService(name, surnames, license, email, keyAccess, password);
       navigation.navigate('Login');
     } catch (err) {
@@ -51,114 +58,125 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#0022f5', '#fff']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <ImageBackground
+      source={require('../../assets/img/micro.webp')}
       style={styles.container}
+      resizeMode="cover"
     >
-      <ScrollView contentContainerStyle={styles.innerContainer}>
-        <Text style={styles.title}>Regístrate</Text>
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput
-          placeholder="Nombre"
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          keyboardType="default"
-        />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+          <View style={styles.innerContainer}>
+            <Text style={styles.title}>Regístrate</Text>
 
-        <Text style={styles.label}>Apellidos</Text>
-        <TextInput
-          placeholder="Apellidos"
-          style={styles.input}
-          value={surnames}
-          onChangeText={setSurnames}
-          keyboardType="default"
-        />
+            <Text style={styles.label}>Nombre</Text>
+            <TextInput
+              placeholder="Nombre"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              keyboardType="default"
+            />
 
-        <Text style={styles.label}>Licencia</Text>
-        <SelectDropdown
-          data={licenses}
-          onSelect={(selectedItem) => setLicense(selectedItem)}
-          defaultButtonText="Seleccione su licencia"
-          buttonStyle={styles.dropdownButtonStyle}
-          buttonTextStyle={styles.dropdownButtonTxtStyle}
-        />
+            <Text style={styles.label}>Apellidos</Text>
+            <TextInput
+              placeholder="Apellidos"
+              style={styles.input}
+              value={surnames}
+              onChangeText={setSurnames}
+              keyboardType="default"
+            />
 
-        <Text style={styles.label}>Clave</Text>
-        <TextInput
-          placeholder="Clave"
-          style={styles.input}
-          value={keyAccess}
-          onChangeText={setKeyAccess}
-          keyboardType="default"
-        />
+            <Text style={styles.label}>Licencia</Text>
+            <ModalSelector
+              data={licenses}
+              initValue="Seleccione su licencia"
+              onChange={(option) => setLicense(option.key)} // Usa 'key' para obtener el valor real
+              style={styles.modalSelector}
+              initValueTextStyle={styles.inputText}
+              selectTextStyle={styles.inputText}
+            />
+            <Text style={styles.label}>Clave</Text>
+            <TextInput
+              placeholder="Clave"
+              style={styles.input}
+              value={keyAccess}
+              onChangeText={setKeyAccess}
+              keyboardType="default"
+            />
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#ccc"
-        />
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#ccc"
+            />
 
-        <Text style={styles.label}>Contraseña</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#ccc"
-        />
+            <Text style={styles.label}>Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholderTextColor="#ccc"
+            />
 
-        <Text style={styles.label}>Confirmar Contraseña</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar Contraseña"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          placeholderTextColor="#ccc"
-        />
+            <Text style={styles.label}>Confirmar Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirmar Contraseña"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              placeholderTextColor="#ccc"
+            />
 
-        <Text style={styles.error}>{error}</Text>
+            <Text style={styles.error}>{error}</Text>
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>Registrarse</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
+              <Text style={styles.registerButtonText}>Registrarse</Text>
+            </TouchableOpacity>
 
-        <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>¿Ya tienes una cuenta? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.signupButtonText}>Iniciar sesión</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+            <View style={styles.signupContainer}>
+              <Text style={styles.signupText}>¿Ya tienes una cuenta? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.signupButtonText}>Iniciar sesión</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  // Los estilos son los mismos que el original
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    paddingTop: 50,
   },
-  innerContainer: {
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+
+  },
+  innerContainer: {
     width: '90%',
-    alignSelf: 'center',
-    padding: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
-    marginHorizontal: 10,
+    padding: 20,
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,
@@ -179,33 +197,26 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     padding: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     backgroundColor: '#fff',
     color: '#000',
   },
-  dropdownButtonStyle: {
+  modalSelector: {
     width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ccc',
-    paddingHorizontal: 10,
-    height: 50,
+    borderRadius: 8,
+    marginBottom: 10,
     justifyContent: 'center',
-    marginBottom: 20,
-  },
-  dropdownButtonTxtStyle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
+    backgroundColor: '#fff',
   },
   error: {
     color: 'red',
     marginBottom: 10,
   },
   registerButton: {
-    width: '50%',
-    backgroundColor: '#0022f5',
+    width: '70%',
+    backgroundColor: '#1e90ff',
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
