@@ -17,7 +17,7 @@ export default function Channel1Screen() {
     const fetchConnectedUsers = async () => {
       try {
         const response = await axios.get(`${API_URL}/channel1/getUsers`);
-        console.log('Usuarios obtenidos:', response.data);
+        //console.log('Usuarios obtenidos:', response.data);
         const users = response.data?.data || [];
 
         // Filtrar duplicados basados en `id_user`
@@ -36,7 +36,7 @@ export default function Channel1Screen() {
 
     // Escuchar eventos de Socket.IO
     socket.on('new-user-channel1', (newUser) => {
-      console.log('Nuevo usuario:', newUser);
+     //console.log('Nuevo usuario:', newUser);
       setConnectedUsers((prevUsers) => {
         const userExists = prevUsers.some((user) => user.id_user === newUser.id_user);
         if (userExists) {
@@ -47,14 +47,14 @@ export default function Channel1Screen() {
     });
 
     socket.on('user-exit-channel1', (data) => {
-      console.log('Usuario salió:', data);
+      //console.log('Usuario salió:', data);
       setConnectedUsers((prevUsers) =>
         prevUsers.filter((user) => user.id_user !== data.id_user)
       );
     });
 
     socket.on('audio-uploaded-channel1', async (data) => {
-      console.log('Audio recibido:', data);
+     //console.log('Audio recibido:', data);
 
       // Evitar reproducir el audio del cliente que lo subió
       const userId = await SecureStore.getItemAsync('token'); // Reemplaza con tu lógica para obtener el ID del usuario
@@ -104,7 +104,7 @@ export default function Channel1Screen() {
       const response = await axios.delete(`${API_URL}/channel1/deleteUser/${token}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Usuario eliminado del canal:', response.data);
+      //console.log('Usuario eliminado del canal:', response.data);
     } catch (error) {
       console.error('Error al eliminar usuario del canal:', error);
     }
@@ -167,7 +167,7 @@ export default function Channel1Screen() {
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      console.log('Audio grabado en:', uri);
+      //console.log('Audio grabado en:', uri);
 
       // Subir audio al servidor
       uploadAudio(uri);
@@ -199,7 +199,7 @@ export default function Channel1Screen() {
           data={connectedUsers}
           keyExtractor={(item) => `${item.id_user}`}
           renderItem={({ item, index }) => {
-            console.log('Renderizando usuario:', item);
+            //console.log('Renderizando usuario:', item);
             return (
               <View style={styles.userRow}>
                 <View style={styles.greenDot}></View>
