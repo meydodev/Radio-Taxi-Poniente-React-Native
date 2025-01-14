@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   buttonDelete: {
     width: '70%',
-    backgroundColor: 'red',
+    backgroundColor: 'crimson',
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
