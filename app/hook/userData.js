@@ -26,7 +26,7 @@ export const useUserData = () => {
           params: { id_user },
         });
 
-        console.log('Datos cargados del backend:', response.data.user);
+        //console.log('Datos cargados del backend:', response.data.user);
 
         // Fusionar los datos cargados con el estado actual
         setUserData((prevState) => ({

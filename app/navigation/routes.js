@@ -33,16 +33,18 @@ const Routes = () => {
           component={Channel1Screen}
           options={{ title: 'Canal 1',
             headerStyle: {
-              backgroundColor: '#1e90ff',
+              backgroundColor: '#1e90ff',        
             },
             headerTintColor: '#fff',
-        
+            headerBackButtonDisplayMode: 'minimal',
+             headerTitleAlign: 'center'
            }}
         />
         <Stack.Screen
           name="Tabs"
           component={TabsNavigator}
           options={{ headerShown: false }}
+
         />
 
       <Stack.Screen

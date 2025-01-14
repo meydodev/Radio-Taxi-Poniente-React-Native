@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import ModalSelector from 'react-native-modal-selector';
 import axios from 'axios';
@@ -26,25 +27,22 @@ export default function ProfileScreen() {
   const [success, setSuccess] = useState('');
   const [password, setPassword] = useState('');
 
-  // Función para manejar la actualización del perfil
+  const validateInputs = () => {
+    if (!userData.name) return 'Por favor, ingrese su nombre';
+    if (!userData.surnames) return 'Por favor, ingrese sus apellidos';
+    if (!userData.license) return 'Por favor, seleccione su licencia';
+    if (!validateEmail(userData.email)) return 'Por favor, ingresa un email válido';
+
+    if (password || confirmPassword) {
+      if (!validatePassword(password)) return 'La contraseña debe tener al menos 8 caracteres';
+      if (password !== confirmPassword) return 'Las contraseñas no coinciden';
+    }
+
+    return null;
+  };
+
   const handleModifyProfile = async () => {
-    console.log('Botón presionado: Actualizar');
     setError('');
-
-    // Validación de entradas
-    const validateInputs = () => {
-      if (!userData.name) return 'Por favor, ingrese su nombre';
-      if (!userData.surnames) return 'Por favor, ingrese sus apellidos';
-      if (!userData.license) return 'Por favor, seleccione su licencia';
-      if (!validateEmail(userData.email)) return 'Por favor, ingresa un email válido';
-
-      if (password || confirmPassword) {
-        if (!validatePassword(password)) return 'La contraseña debe tener al menos 8 caracteres';
-        if (password !== confirmPassword) return 'Las contraseñas no coinciden';
-      }
-
-      return null;
-    };
 
     const errorMsg = validateInputs();
     if (errorMsg) {
@@ -53,15 +51,12 @@ export default function ProfileScreen() {
     }
 
     try {
-      // Obtener el token del almacenamiento seguro
       const token = await SecureStore.getItemAsync('token');
-      //console.log('Token:', token);
       if (!token) {
         setError('No se encontró el token de autenticación');
         return;
       }
 
-      // Crear el cuerpo de la solicitud
       const updatedData = {
         id_user: token,
         name: userData.name,
@@ -69,15 +64,11 @@ export default function ProfileScreen() {
         email: userData.email,
         license: userData.license,
       };
-      //console.log('Datos actualizados:', updatedData);
 
       if (password) {
         updatedData.password = password;
       }
 
-      //console.log('Datos enviados al backend:', updatedData);
-
-      // Llamar al endpoint del backend
       const response = await axios.put(`${API_URL}/profile/update-profile`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -85,20 +76,48 @@ export default function ProfileScreen() {
         },
       });
 
-      //console.log('Perfil actualizado correctamente:', response.data);
-      setError('');
       setSuccess('Datos actualizados correctamente');
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
-      console.error('Error al actualizar el perfil:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Error al actualizar el perfil');
     }
   };
 
-  if (loadError) {
-    return <Text>Error cargando los datos del usuario</Text>;
-  }
+  const handleDeleteProfile = async () => {
+    Alert.alert(
+      'Confirmar eliminación', // Título
+      '¿Estás seguro de que deseas eliminar tu perfil?', // Mensaje
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => console.log('Eliminación cancelada'), // Acción al presionar "Cancelar"
+          style: 'cancel', // Estilo del botón
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const id_user = await SecureStore.getItemAsync('token');
+              if (!id_user) {
+                Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.')
+                return;
+              }
+  
+              // Aquí añadirías la lógica para eliminar el perfil
+              Alert.alert('Perfil eliminado', 'Tu perfil ha sido eliminado con éxito.');
+            } catch (error) {
+              Alert.alert('Error', 'Ocurrió un error al intentar eliminar el perfil.');
+              console.error(error);
+            }
+          },
+          style: 'destructive', // Estilo de acción destructiva para mayor claridad
+        },
+      ],
+      { cancelable: false } // Evita cerrar la alerta tocando fuera de ella
+    );
+  };
+  
 
   return (
     <ImageBackground source={require('../../assets/img/micro.webp')} style={styles.container} resizeMode="cover">
@@ -111,7 +130,6 @@ export default function ProfileScreen() {
               style={styles.input}
               value={userData.name}
               onChangeText={(text) => setUserData({ ...userData, name: text })}
-              keyboardType="default"
             />
 
             <Text style={styles.label}>Apellidos</Text>
@@ -120,30 +138,18 @@ export default function ProfileScreen() {
               style={styles.input}
               value={userData.surnames}
               onChangeText={(text) => setUserData({ ...userData, surnames: text })}
-              keyboardType="default"
             />
 
             <Text style={styles.label}>Licencia</Text>
             <ModalSelector
               data={licenses}
               initValue="Seleccione su licencia"
-              onChange={(option) => {
-                if (option?.key) {
-                  console.log('Licencia seleccionada:', option.key); // Verifica el valor seleccionado
-                  setUserData((prev) => ({
-                    ...prev,
-                    license: option.key, 
-                  }));
-                } else {
-                  console.warn('Selección de licencia inválida:', option);
-                }
-              }}
+              onChange={(option) => setUserData((prev) => ({ ...prev, license: option.key }))}
               style={styles.modalSelector}
               initValueTextStyle={styles.inputText}
               selectTextStyle={styles.inputText}
-              selectedKey={userData.license || 0} // Muestra 0 si no hay licencia seleccionada
+              selectedKey={userData.license || 0}
             />
-
 
             <Text style={styles.label}>Email</Text>
             <TextInput
@@ -153,7 +159,6 @@ export default function ProfileScreen() {
               onChangeText={(text) => setUserData({ ...userData, email: text })}
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholderTextColor="#ccc"
             />
 
             <Text style={styles.label}>Modificar Contraseña</Text>
@@ -163,7 +168,6 @@ export default function ProfileScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholderTextColor="#ccc"
             />
 
             <Text style={styles.label}>Confirmar Contraseña</Text>
@@ -173,14 +177,18 @@ export default function ProfileScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
-              placeholderTextColor="#ccc"
             />
 
-            <Text style={styles.error}>{error}</Text>
-            <Text style={styles.success}>{success}</Text>
 
-            <TouchableOpacity style={styles.registerButton} onPress={handleModifyProfile}>
-              <Text style={styles.registerButtonText}>Actualizar</Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {success ? <Text style={styles.success}>{success}</Text> : null}
+
+            <TouchableOpacity style={styles.updateButton} onPress={handleModifyProfile}>
+              <Text style={styles.updateButtonText}>Actualizar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.buttonDelete} onPress={handleDeleteProfile}>
+              <Text style={styles.deleteButtonText}>Eliminar Mi Perfil</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -201,7 +209,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-
   },
   innerContainer: {
     width: '90%',
@@ -209,12 +216,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#000',
   },
   label: {
     alignSelf: 'flex-start',
@@ -239,8 +240,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     marginBottom: 10,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
   },
   error: {
     color: 'red',
@@ -250,31 +249,30 @@ const styles = StyleSheet.create({
     color: 'green',
     marginBottom: 10,
   },
-  registerButton: {
+  updateButton: {
     width: '70%',
     backgroundColor: '#1e90ff',
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
+    marginTop: 20,
   },
-  registerButtonText: {
+  updateButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  signupContainer: {
-    flexDirection: 'row',
+  buttonDelete: {
+    width: '70%',
+    backgroundColor: 'red',
+    padding: 15,
+    borderRadius: 50,
     alignItems: 'center',
     marginTop: 20,
   },
-  signupText: {
-    fontSize: 14,
-    color: '#000',
-  },
-  signupButtonText: {
-    fontSize: 14,
-    color: '#0022f5',
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 5,
   },
 });

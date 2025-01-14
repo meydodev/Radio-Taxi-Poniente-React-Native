@@ -114,7 +114,7 @@ export default function Channel1Screen() {
     try {
       const token = await SecureStore.getItemAsync('token');
       if (!token) {
-        Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.');
+        Alert.alert('Error', 'Por favor, inicia sesión de nuevo.');
         return;
       }
 
