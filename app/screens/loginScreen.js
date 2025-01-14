@@ -9,17 +9,19 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  ImageBackground
+  ImageBackground,
 } from 'react-native';
 import { login } from '../services/authService';
 import { useNavigation } from '@react-navigation/native';
 
 import { validateEmail, validatePassword } from '../utils/inputValidation';
 import * as SecureStore from 'expo-secure-store';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Importa la biblioteca de iconos
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Estado para alternar visibilidad de la contraseña
   const navigation = useNavigation();
   const [error, setError] = useState('');
 
@@ -52,10 +54,10 @@ export default function LoginScreen() {
 
   return (
     <ImageBackground
-          source={require('../../assets/img/micro.webp')}
-          style={styles.container}
-          resizeMode="cover"
-        > 
+      source={require('../../assets/img/micro.webp')}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -75,14 +77,26 @@ export default function LoginScreen() {
               autoCapitalize="none"
               placeholderTextColor="#ccc"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholderTextColor="#ccc"
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputWithButton}
+                placeholder="Contraseña"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword} // Alterna la visibilidad
+                placeholderTextColor="#ccc"
+              />
+              <TouchableOpacity
+                style={styles.buttonInsideInput}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'} // Cambia entre "ojo" y "ojo tachado"
+                  size={15}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.error}>{error}</Text>
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
               <Text style={styles.loginButtonText}>Entrar</Text>
@@ -96,7 +110,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      </ImageBackground>
+    </ImageBackground>
   );
 }
 
@@ -143,6 +157,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#000',
   },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  inputWithButton: {
+    flex: 1,
+    height: 40,
+    paddingHorizontal: 10,
+    color: '#000',
+  },
+  buttonInsideInput: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   error: {
     color: 'red',
     marginBottom: 10,
@@ -155,7 +189,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  
   loginButtonText: {
     color: '#fff',
     fontSize: 16,

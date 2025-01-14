@@ -8,12 +8,13 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  ImageBackground
+  ImageBackground,
 } from 'react-native';
 import ModalSelector from 'react-native-modal-selector';
 import { useNavigation } from '@react-navigation/native';
 import { validateEmail, validatePassword } from '../utils/inputValidation';
 import { registerService } from '../services/registerService';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Importa la biblioteca de iconos
 
 const licenses = Array.from({ length: 47 }, (_, i) => ({ key: i + 1, label: `Licencia ${i + 1}` }));
 
@@ -25,6 +26,8 @@ export default function RegisterScreen() {
   const [keyAccess, setKeyAccess] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Estado para alternar visibilidad de la contraseña
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para alternar visibilidad de la confirmación
   const [error, setError] = useState('');
   const navigation = useNavigation();
 
@@ -119,24 +122,48 @@ export default function RegisterScreen() {
             />
 
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholderTextColor="#ccc"
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputWithButton}
+                placeholder="Contraseña"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholderTextColor="#ccc"
+              />
+              <TouchableOpacity
+                style={styles.buttonInsideInput}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={15}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.label}>Confirmar Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmar Contraseña"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              placeholderTextColor="#ccc"
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputWithButton}
+                placeholder="Confirmar Contraseña"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                placeholderTextColor="#ccc"
+              />
+              <TouchableOpacity
+                style={styles.buttonInsideInput}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Icon
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  size={15}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.error}>{error}</Text>
 
@@ -169,7 +196,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-
   },
   innerContainer: {
     width: '90%',
@@ -200,6 +226,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#fff',
     color: '#000',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+  },
+  inputWithButton: {
+    flex: 1,
+    height: 40,
+    paddingHorizontal: 10,
+    color: '#000',
+  },
+  buttonInsideInput: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalSelector: {
     width: '100%',

@@ -17,8 +17,11 @@ import { useUserData } from '../hook/userData';
 import { validateEmail, validatePassword } from '../utils/inputValidation';
 import { API_URL } from '../constants/config';
 import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const licenses = Array.from({ length: 47 }, (_, i) => ({ key: i + 1, label: `Licencia ${i + 1}` }));
+
 
 export default function ProfileScreen() {
   const { userData, setUserData, error: loadError } = useUserData();
@@ -26,6 +29,10 @@ export default function ProfileScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [password, setPassword] = useState('');
+  const navigation = useNavigation();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   const validateInputs = () => {
     if (!userData.name) return 'Por favor, ingrese su nombre';
@@ -86,38 +93,51 @@ export default function ProfileScreen() {
 
   const handleDeleteProfile = async () => {
     Alert.alert(
-      'Confirmar eliminación', // Título
-      '¿Estás seguro de que deseas eliminar tu perfil?', // Mensaje
+      'Confirmar eliminación',
+      '¿Estás seguro de que deseas eliminar tu perfil?',
       [
         {
           text: 'Cancelar',
-          onPress: () => console.log('Eliminación cancelada'), // Acción al presionar "Cancelar"
-          style: 'cancel', // Estilo del botón
+          onPress: () => console.log('Eliminación cancelada'),
+          style: 'cancel',
         },
         {
           text: 'Eliminar',
           onPress: async () => {
             try {
-              const id_user = await SecureStore.getItemAsync('token');
-              if (!id_user) {
-                Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.')
+              // Obtén el token del almacenamiento seguro
+              const token = await SecureStore.getItemAsync('token');
+              if (!token) {
+                Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.');
                 return;
               }
-  
-              // Aquí añadirías la lógica para eliminar el perfil
-              Alert.alert('Perfil eliminado', 'Tu perfil ha sido eliminado con éxito.');
+
+              const response = await axios.delete(`${API_URL}/profile/deleteUser`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (response.status === 200) {
+                Alert.alert('Perfil eliminado', 'Tu perfil ha sido eliminado con éxito.');
+                await SecureStore.deleteItemAsync('token');
+                navigation.navigate('Login');
+
+              } else {
+                Alert.alert('Error', 'No se pudo eliminar el perfil. Inténtalo nuevamente.');
+              }
             } catch (error) {
               Alert.alert('Error', 'Ocurrió un error al intentar eliminar el perfil.');
               console.error(error);
             }
           },
-          style: 'destructive', // Estilo de acción destructiva para mayor claridad
+          style: 'destructive',
         },
       ],
-      { cancelable: false } // Evita cerrar la alerta tocando fuera de ella
+      { cancelable: false }
     );
   };
-  
+
 
   return (
     <ImageBackground source={require('../../assets/img/micro.webp')} style={styles.container} resizeMode="cover">
@@ -162,23 +182,46 @@ export default function ProfileScreen() {
             />
 
             <Text style={styles.label}>Modificar Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputWithButton}
+                placeholder="Contraseña"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.buttonInsideInput}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={15}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.label}>Confirmar Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmar Contraseña"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.inputWithButton}
+                placeholder="Confirmar Contraseña"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity
+                style={styles.buttonInsideInput}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+               <Icon
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  size={15}
+                  color="#000"
+                />
+              </TouchableOpacity>
+            </View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
             {success ? <Text style={styles.success}>{success}</Text> : null}
@@ -201,6 +244,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 50,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+  },
+  inputWithButton: {
+    flex: 1,
+    height: 40,
+    paddingHorizontal: 10,
+    color: '#000',
+  },
+
+  buttonInsideInput: {
+    paddingHorizontal: 10,
   },
   keyboardAvoidingView: {
     flex: 1,
