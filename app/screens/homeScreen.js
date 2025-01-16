@@ -1,13 +1,42 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import { API_URL } from '../constants/config';
+import { Audio } from 'expo-av';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
 
+
+  useEffect(() => {
+    requestPermissions();
+  }, []);
+
+  async function requestPermissions() {
+    try {
+      // Solicitar permisos para grabar audio
+      const { status } = await Audio.requestPermissionsAsync();
+
+      if (status === 'granted') {
+        console.log('Permisos otorgados para grabar audio.');
+
+        // Configuración de las opciones de audio
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
+      } else {
+        console.warn('Permisos denegados.');
+        Alert.alert('Permiso denegado', 'No se otorgaron permisos para grabar audio.');
+      }
+    } catch (err) {
+      console.error('Error al solicitar los permisos', err);
+      Alert.alert('Error', 'Error al solicitar los permisos.');
+    }
+  }
 
   async function handleChannelJoin() {
     try {
