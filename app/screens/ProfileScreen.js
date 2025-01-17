@@ -12,14 +12,13 @@ import {
   Alert,
 } from 'react-native';
 import ModalSelector from 'react-native-modal-selector';
-import axios from 'axios';
-import { useUserData } from '../hook/userData';
+import { useUserData } from '../hook/profileHook';
 import { validateEmail, validatePassword } from '../utils/inputValidation';
-import { API_URL } from '../constants/config';
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { deleteUser } from '../services/profileService';
+import { updateUserProfile } from '../services/profileService';
 const licenses = Array.from({ length: 47 }, (_, i) => ({ key: i + 1, label: `Licencia ${i + 1}` }));
 
 
@@ -32,6 +31,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
 
   const validateInputs = () => {
@@ -48,48 +48,44 @@ export default function ProfileScreen() {
     return null;
   };
 
+  
+
   const handleModifyProfile = async () => {
     setError('');
-
+    setSuccess('');
+  
+    // Validar inputs antes de proceder
     const errorMsg = validateInputs();
     if (errorMsg) {
       setError(errorMsg);
       return;
     }
-
     try {
-      const token = await SecureStore.getItemAsync('token');
-      if (!token) {
-        setError('No se encontró el token de autenticación');
-        return;
-      }
-
+      // Crear los datos actualizados para el perfil
       const updatedData = {
-        id_user: token,
         name: userData.name,
         surnames: userData.surnames,
         email: userData.email,
         license: userData.license,
       };
-
+  
+      // Incluir la contraseña si fue proporcionada
       if (password) {
         updatedData.password = password;
       }
-
-      const response = await axios.put(`${API_URL}/profile/update-profile`, updatedData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
+      // Llamar al servicio para actualizar el perfil
+      const response = await updateUserProfile(updatedData);
+  
+      // Manejar respuesta exitosa
       setSuccess('Datos actualizados correctamente');
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al actualizar el perfil');
+      // Manejar errores
+      setError(err.message || 'Error al actualizar el perfil');
     }
   };
+
 
   const handleDeleteProfile = async () => {
     Alert.alert(
@@ -111,23 +107,23 @@ export default function ProfileScreen() {
                 Alert.alert('Error', 'No se encontró el token. Por favor, inicia sesión.');
                 return;
               }
-
-              const response = await axios.delete(`${API_URL}/profile/deleteUser`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
-
+  
+              // Llama al servicio para eliminar al usuario
+              const response = await deleteUser(token);
+  
+              // Verifica el estado de la respuesta
               if (response.status === 200) {
                 Alert.alert('Perfil eliminado', 'Tu perfil ha sido eliminado con éxito.');
-                await SecureStore.deleteItemAsync('token');
-                navigation.navigate('Login');
-
+                await SecureStore.deleteItemAsync('token'); // Elimina el token localmente
+                navigation.navigate('Login'); // Redirige a la pantalla de login
               } else {
                 Alert.alert('Error', 'No se pudo eliminar el perfil. Inténtalo nuevamente.');
               }
             } catch (error) {
-              Alert.alert('Error', 'Ocurrió un error al intentar eliminar el perfil.');
+              Alert.alert(
+                'Error',
+                error.message || 'Ocurrió un error al intentar eliminar el perfil.'
+              );
               console.error(error);
             }
           },
@@ -137,6 +133,7 @@ export default function ProfileScreen() {
       { cancelable: false }
     );
   };
+  
 
 
   return (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { API_URL } from '../constants/config';
+import { getDataUser } from '../services/profileService';
+
 
 export const useUserData = () => {
   const [userData, setUserData] = useState({
@@ -22,20 +22,17 @@ export const useUserData = () => {
           return;
         }
 
-        const response = await axios.get(`${API_URL}/profile/getDataUser`, {
-          params: { id_user },
-        });
+        // Llama al servicio para obtener los datos del usuario
+        const user = await getDataUser(id_user);
 
-        //console.log('Datos cargados del backend:', response.data.user);
-
-        // Fusionar los datos cargados con el estado actual
+        // Actualiza el estado con los datos obtenidos
         setUserData((prevState) => ({
           ...prevState,
-          ...response.data.user, // Solo sobrescribe las claves cargadas del backend
+          ...user,
         }));
       } catch (err) {
         console.error('Error cargando los datos del usuario:', err);
-        setError(err);
+        setError(err.message || 'Error inesperado');
       }
     };
 
