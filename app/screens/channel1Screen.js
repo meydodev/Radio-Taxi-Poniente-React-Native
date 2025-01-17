@@ -12,6 +12,7 @@ export default function Channel1Screen() {
   const [isPlaying, setIsPlaying] = useState(false); // Control de reproducción
   const [connectedUsers, setConnectedUsers] = useState([]);
   const socket = io(API_URL);
+  let pressTimer;
 
   useEffect(() => {
     const fetchConnectedUsers = async () => {
@@ -36,7 +37,7 @@ export default function Channel1Screen() {
 
     // Escuchar eventos de Socket.IO
     socket.on('new-user-channel1', (newUser) => {
-     //console.log('Nuevo usuario:', newUser);
+      //console.log('Nuevo usuario:', newUser);
       setConnectedUsers((prevUsers) => {
         const userExists = prevUsers.some((user) => user.id_user === newUser.id_user);
         if (userExists) {
@@ -54,7 +55,7 @@ export default function Channel1Screen() {
     });
 
     socket.on('audio-uploaded-channel1', async (data) => {
-     //console.log('Audio recibido:', data);
+      //console.log('Audio recibido:', data);
 
       // Evitar reproducir el audio del cliente que lo subió
       const userId = await SecureStore.getItemAsync('token'); // Reemplaza con tu lógica para obtener el ID del usuario
@@ -143,38 +144,40 @@ export default function Channel1Screen() {
   async function startRecording() {
     try {
       const perm = await Audio.requestPermissionsAsync();
-      if (perm.status === 'granted') {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-        });
-        const { recording } = await Audio.Recording.createAsync(
-          Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-        );
-        setRecording(recording);
+      if (perm.status !== 'granted') {
+        Alert.alert('Permiso denegado', 'No se puede grabar sin permisos.');
+        return;
       }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+      setRecording(recording); // Marca el estado como grabando
     } catch (err) {
-      console.error('Error starting recording', err);
-      Alert.alert('Error', 'Por favor deje el boton pulsado para hablar.');
+      console.error('Error al iniciar la grabación:', err);
+      Alert.alert('Error', 'No se pudo iniciar la grabación.');
     }
   }
 
   async function stopRecording() {
     if (!recording) return;
 
-    setRecording(undefined);
-
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      //console.log('Audio grabado en:', uri);
-
-      // Subir audio al servidor
-      uploadAudio(uri);
+      setRecording(null); // Limpia el estado de grabación
+      uploadAudio(uri); // Sube el audio
     } catch (err) {
-      console.error('Error stopping recording', err);
+      console.error('Error al detener la grabación:', err);
     }
   }
+
+
 
   return (
     <ImageBackground
@@ -184,15 +187,31 @@ export default function Channel1Screen() {
     >
       <View style={styles.container}>
         <TouchableOpacity
-          style={recording || isPlaying ? styles.buttonDisabled : styles.button}
-          onPressIn={!isPlaying ? startRecording : null}
-          onPressOut={!isPlaying ? stopRecording : null}
-          disabled={isPlaying} // Deshabilitar el botón si hay audio en reproducción
+          style={recording ? styles.buttonDisabled : styles.button}
+          onPressIn={() => {
+            pressTimer = setTimeout(() => {
+              if (!isPlaying && !recording) {
+                startRecording();
+              }
+            }, 200); // Inicia la grabación solo si el botón se presiona por más de 200ms
+          }}
+          onPressOut={() => {
+            clearTimeout(pressTimer);
+            if(!recording){
+              Alert.alert('Mantenga el boton presionado para grabar');
+            } 
+            if (recording) {
+
+              stopRecording();
+            }
+          }}
+          disabled={isPlaying}
         >
           <Text style={styles.buttonText}>
             {recording ? 'Grabando...' : isPlaying ? 'Reproduciendo...' : 'Hablar'}
           </Text>
         </TouchableOpacity>
+
 
         <Text style={styles.title}>Usuarios Conectados:</Text>
         <FlatList
