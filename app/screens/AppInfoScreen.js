@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { View, Text, StyleSheet } from 'react-native';
+
 
 
 
