@@ -64,7 +64,7 @@ export default function Channel1Screen() {
         }
 
         if (userId === token) {
-          console.log('Audio enviado por el usuario actual. No se reproduce.');
+          //console.log('Audio enviado por el usuario actual. No se reproduce.');
           setIsBroadcasting(true); // Cambiar a estado de emisión
           setTimeout(() => {
             setIsBroadcasting(false); // Restablecer estado después de un tiempo
@@ -72,7 +72,7 @@ export default function Channel1Screen() {
           return; // No reproducir el audio enviado por el usuario actual
         }
 
-        console.log(`Audio recibido de usuario ${userId}: ${audioUrl}`);
+        //console.log(`Audio recibido de usuario ${userId}: ${audioUrl}`);
         setIsPlaying(true); // Cambiar estado a reproduciendo
 
         await Audio.setAudioModeAsync({
@@ -84,13 +84,13 @@ export default function Channel1Screen() {
         const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.didJustFinish) {
-            console.log('Reproducción finalizada.');
+            //console.log('Reproducción finalizada.');
             setIsPlaying(false); // Restablecer estado
             sound.unloadAsync(); // Liberar recursos
           }
         });
 
-        console.log('Iniciando reproducción...');
+        //console.log('Iniciando reproducción...');
         await sound.playAsync(); // Reproducir audio
       } catch (error) {
         console.error('Error al intentar reproducir el audio:', error);
@@ -159,10 +159,10 @@ export default function Channel1Screen() {
         },
       });
 
-      console.log('Audio subido con éxito:', response.data);
+      //console.log('Audio subido con éxito:', response.data);
     } catch (error) {
-      console.error('Error al subir el audio:', error);
       Alert.alert('Error', 'No se pudo subir el audio.');
+      console.error('Error al subir el audio:', error);
     }
   };
 
@@ -219,11 +219,17 @@ export default function Channel1Screen() {
     >
       <View style={styles.container}>
         <TouchableOpacity
-          style={
-            recording || isRecording || isPlaying || isBroadcasting
-              ? styles.buttonDisabled
-              : styles.button
-          }
+           style={[
+            recording
+              ? styles.buttonRecording
+              : isBroadcasting
+              ? styles.buttonBroadcasting
+              : isPlaying
+              ? styles.buttonPlaying
+              : isRecording
+              ? styles.buttonOtherUserRecording
+              : styles.button,
+          ]}
           onPressIn={() => {
             pressTimer = setTimeout(() => {
               if (!isPlaying && !recording && !isRecording) {
@@ -293,8 +299,48 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     elevation: 5,
   },
+  buttonBroadcasting: {
+    backgroundColor: '#32CD32', // Verde cuando está emitiendo
+    width: 250,
+    height: 250,
+    borderRadius: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    elevation: 5,
+  },
+  buttonPlaying: {
+    backgroundColor: '#FFA500', // Naranja cuando está reproduciendo
+    width: 250,
+    height: 250,
+    borderRadius: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    elevation: 5,
+  },
+  buttonRecording: {
+    backgroundColor: '#FFD700', // Amarillo cuando está grabando
+    width: 250,
+    height: 250,
+    borderRadius: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    elevation: 5,
+  },
   buttonDisabled: {
     backgroundColor: '#A9A9A9',
+    width: 250,
+    height: 250,
+    borderRadius: 150,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    elevation: 5,
+  },
+  buttonOtherUserRecording: {
+    backgroundColor: '#FF4500', // Rojo cuando otro usuario está grabando
     width: 250,
     height: 250,
     borderRadius: 150,
