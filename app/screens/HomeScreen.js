@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e90ff',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 30,
+    borderRadius: 50,
     width: 200,
-    height: 90,
+    height: 70,
     justifyContent: 'center', // Centrar contenido verticalmente
     alignItems: 'center', // Centrar contenido horizontalmente
   },
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 26,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'gray',
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 10,
+    borderRadius: 50,
     marginTop: 20,
   },
   logo: {

@@ -108,6 +108,45 @@ export default function Channel1Screen() {
     };
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      e.preventDefault();
+
+      Alert.alert(
+        'Salir del Canal',
+        '¿Estás seguro de que quieres salir del canal?',
+        [
+          { text: 'Cancelar', style: 'cancel', onPress: () => {} },
+          {
+            text: 'Salir',
+            style: 'destructive',
+            onPress: () => handleLeaveChannel(e.data.action),
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const handleLeaveChannel = async (action) => {
+    try {
+      const response = await axios.get(`${API_URL}/channel1/getUsers`);
+      const users = response.data?.data || [];
+
+      if (users.length === 1) {
+        await axios.delete(`${API_URL}/channel1/delete-audios`);
+        console.log('Canal vacío, se ejecutó la limpieza del canal.');
+      }
+
+      navigation.dispatch(action);
+    } catch (error) {
+      console.error('Error al salir del canal:', error);
+      Alert.alert('Error', 'Hubo un problema al salir del canal.');
+    }
+  };
+
+
   const deleteUserFromChannel = async () => {
     try {
       const token = await SecureStore.getItemAsync('token');
