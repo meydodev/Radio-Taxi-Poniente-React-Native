@@ -46,47 +46,58 @@ export default function Channel1Screen() {
 
     fetchConnectedUsers();
 
-    socket.on('recording-started', () => {
-      setIsRecording(true);
+    socket.on('recording-started', ({ userId }) => {
+      // Solo muestra "otro usuario está grabando" si no es el usuario actual
+      SecureStore.getItemAsync('token').then((token) => {
+        if (token !== userId && !isBroadcasting) {
+          setIsRecording(true);
+        }
+      });
     });
-
+    
     socket.on('recording-stopped', () => {
-      setIsRecording(false);
+      // Detén el estado de grabación solo si no estás en emisión
+      if (!isBroadcasting) {
+        setIsRecording(false);
+      }
     });
-
+    
     socket.on('audio-uploaded-channel1', async ({ userId, audioUrl }) => {
       try {
         const token = await SecureStore.getItemAsync('token');
         if (!token) return;
-
+    
         if (userId === token) {
           setIsBroadcasting(true);
-          setTimeout(() => setIsBroadcasting(false), 3000);
-          return;
+          return; // No reproducir el audio si es el usuario actual
         }
-
+    
+        setIsBroadcasting(true); // Comienza la emisión
         setIsPlaying(true);
-
+    
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
           staysActiveInBackground: true,
           playsInSilentModeIOS: true,
         });
-
+    
         const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.didJustFinish) {
+            setIsBroadcasting(false); // Termina la emisión cuando termina la reproducción
             setIsPlaying(false);
             sound.unloadAsync();
           }
         });
-
+    
         await sound.playAsync();
       } catch (error) {
         console.error('Error al intentar reproducir el audio:', error);
         setIsPlaying(false);
+        setIsBroadcasting(false);
       }
     });
+    
 
     socket.on('new-user-channel1', (newUser) => {
       setConnectedUsers((prevUsers) => {
@@ -111,7 +122,6 @@ export default function Channel1Screen() {
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       e.preventDefault();
-
       Alert.alert(
         'Salir del Canal',
         '¿Estás seguro de que quieres salir del canal?',
@@ -167,7 +177,7 @@ export default function Channel1Screen() {
         Alert.alert('Error', 'Por favor, inicia sesión de nuevo.');
         return;
       }
-
+  
       const formData = new FormData();
       formData.append('file', {
         uri: audioUri,
@@ -176,15 +186,21 @@ export default function Channel1Screen() {
       });
       formData.append('id_user', token);
       formData.append('duration', duration);
-
+  
       const response = await axios.post(`${API_URL}/channel1/upload-audio`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      console.log('Audio subido con éxito:', response.data);
+  
+     //console.log('Audio subido con éxito:', response.data);
+  
+      // Mantén el botón "Emitiendo" durante la duración del audio
+      setIsBroadcasting(true);
+      setTimeout(() => {
+        setIsBroadcasting(false);
+      }, duration * 1000); // Convertir duración a milisegundos
     } catch (error) {
       Alert.alert('Error', 'No se pudo subir el audio.');
       console.error('Error al subir el audio:', error);
@@ -200,7 +216,7 @@ export default function Channel1Screen() {
       }
 
       startTimeRef.current = Date.now();
-      console.log(`Grabación iniciada. Tiempo de inicio registrado: ${startTimeRef.current}`);
+      //console.log(`Grabación iniciada. Tiempo de inicio registrado: ${startTimeRef.current}`);
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -244,7 +260,7 @@ export default function Channel1Screen() {
       const duration = (endTime - startTimeRef.current) / 1000;
       startTimeRef.current = null;
 
-      console.log(`Duración del audio: ${duration} segundos`);
+      //onsole.log(`Duración del audio: ${duration} segundos`);
 
       if (!duration || duration <= 0) {
         console.error('Duración inválida:', duration);
