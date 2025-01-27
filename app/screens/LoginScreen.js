@@ -21,7 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Importa 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Estado para alternar visibilidad de la contraseña
+  const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
   const [error, setError] = useState('');
 
